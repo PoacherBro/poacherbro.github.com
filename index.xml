@@ -40,8 +40,7 @@ virtual boole isEmpty(); // 位于 length 方法之前  重新编译FastString.d
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>http://poacherbro.github.com/home/</guid>
-      <description>This is the home page. It will display the blog section if there is one, and a text before.
-Hey ! Welcome to the Cocoa Enhanced theme. Here are some articles :</description>
+      <description>欢迎~_~</description>
     </item>
     
     <item>
