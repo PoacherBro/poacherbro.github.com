@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+      <title>DLL的二进制兼容 :: Leo学习日志 — 保持学习的快乐</title>
+    
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta name="description" content="详解 什么是二进制兼容？ 所谓二进制兼容就是在做版本升级（也可能是Bug fix）库文件的时候，不必要重新编译使用这个库的可执行文件或使用这个库的其他库文件，同时能保证程序功能不被破坏。
+当然，这只是一个现象级描述，其实在一些简单的例子里，假设我们导出一个C&#43;&#43;类，在调用时，第三方仍然不需要重新编译可以运行。如下面例子：
+ FastString.dll - FastString.h文件  //导出类 class __declspec(dllexport) FastString { public: FastString(); ~FastString(); size_t length() { return 0; } private: unsigned char *m_bytes; }  test.exe - main.cpp文件  int main() { FastString fStr; size_t len = fStr.length(); printf(&amp;#34;fast string length %d\n&amp;#34;, len); _getch(); return 0; } 如果我们给导出类加上一个虚函数
+virtual boole isEmpty(); // 位于 length 方法之前 重新编译FastString.dll，然后直接运行test.exe，发现仍然能打印出fast string length 0，并且没有运行错误。
+所以按照上面所说，FastString.dll是二进制兼容的。然而不是的！因为它增加了一个虚函数，导致FastString实例增加了一个虚函数表（是一个void **指针），那为什么运行的时候没有错误呢？参考这个问题：SO- why new virtual function will not break binary compatibility per phenomenon?"/>
+<meta name="keywords" content=""/>
+<meta name="robots" content="noodp"/>
+<link rel="canonical" href="/blog/binary-compatibility-cpp/" />
+
+
+
+
+
+<link rel="stylesheet" href="/assets/style.css">
+
+
+<link rel="stylesheet" href="/style.css">
+
+
+<link rel="apple-touch-icon-precomposed" sizes="144x144" href="/img/apple-touch-icon-144-precomposed.png">
+<link rel="shortcut icon" href="/img/favicon.png">
+
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="DLL的二进制兼容"/>
+<meta name="twitter:description" content="详解 什么是二进制兼容？ 所谓二进制兼容就是在做版本升级（也可能是Bug fix）库文件的时候，不必要重新编译使用这个库的可执行文件或使用这个库的其他库文件，同时能保证程序功能不被破坏。
+当然，这只是一个现象级描述，其实在一些简单的例子里，假设我们导出一个C&#43;&#43;类，在调用时，第三方仍然不需要重新编译可以运行。如下面例子：
+ FastString.dll - FastString.h文件  //导出类 class __declspec(dllexport) FastString { public: FastString(); ~FastString(); size_t length() { return 0; } private: unsigned char *m_bytes; }  test.exe - main.cpp文件  int main() { FastString fStr; size_t len = fStr.length(); printf(&#34;fast string length %d\n&#34;, len); _getch(); return 0; } 如果我们给导出类加上一个虚函数
+virtual boole isEmpty(); // 位于 length 方法之前 重新编译FastString.dll，然后直接运行test.exe，发现仍然能打印出fast string length 0，并且没有运行错误。
+所以按照上面所说，FastString.dll是二进制兼容的。然而不是的！因为它增加了一个虚函数，导致FastString实例增加了一个虚函数表（是一个void **指针），那为什么运行的时候没有错误呢？参考这个问题：SO- why new virtual function will not break binary compatibility per phenomenon?"/>
+
+
+
+<meta property="og:title" content="DLL的二进制兼容" />
+<meta property="og:description" content="详解 什么是二进制兼容？ 所谓二进制兼容就是在做版本升级（也可能是Bug fix）库文件的时候，不必要重新编译使用这个库的可执行文件或使用这个库的其他库文件，同时能保证程序功能不被破坏。
+当然，这只是一个现象级描述，其实在一些简单的例子里，假设我们导出一个C&#43;&#43;类，在调用时，第三方仍然不需要重新编译可以运行。如下面例子：
+ FastString.dll - FastString.h文件  //导出类 class __declspec(dllexport) FastString { public: FastString(); ~FastString(); size_t length() { return 0; } private: unsigned char *m_bytes; }  test.exe - main.cpp文件  int main() { FastString fStr; size_t len = fStr.length(); printf(&#34;fast string length %d\n&#34;, len); _getch(); return 0; } 如果我们给导出类加上一个虚函数
+virtual boole isEmpty(); // 位于 length 方法之前 重新编译FastString.dll，然后直接运行test.exe，发现仍然能打印出fast string length 0，并且没有运行错误。
+所以按照上面所说，FastString.dll是二进制兼容的。然而不是的！因为它增加了一个虚函数，导致FastString实例增加了一个虚函数表（是一个void **指针），那为什么运行的时候没有错误呢？参考这个问题：SO- why new virtual function will not break binary compatibility per phenomenon?" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/blog/binary-compatibility-cpp/" />
+<meta property="article:published_time" content="2018-06-08T10:44:47+08:00" />
+<meta property="article:modified_time" content="2018-06-08T10:44:47+08:00" /><meta property="og:site_name" content="Leo学习日志" />
+
+
+
+
+
+
+  </head>
+  <body class="dark-theme">
+    <div class="container">
+      <header class="header">
+  <span class="header__inner">
+    <a href="/" class="logo" style="text-decoration: none;">
+  
+    <span class="logo__mark"><svg xmlns="http://www.w3.org/2000/svg" class="greater-icon" viewBox="0 0 44 44">
+  <path fill="none" d="M15 8l14.729 14.382L15 35.367"/>
+</svg>
+</span>
+    <span class="logo__text">Leo学习小站</span>
+    <span class="logo__cursor"></span>
+  
+</a>
+
+    <span class="header__right">
+      
+        <nav class="menu">
+  <ul class="menu__inner menu__inner--desktop">
+    
+      
+        
+          <li><a href="/about">关于</a></li>
+        
+      
+        
+          <li><a href="/archive">归档</a></li>
+        
+      
+      
+    
+  </ul>
+
+  <ul class="menu__inner menu__inner--mobile">
+    
+      
+        <li><a href="/about">关于</a></li>
+      
+    
+      
+        <li><a href="/archive">归档</a></li>
+      
+    
+  </ul>
+</nav>
+
+        <span class="menu-trigger">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M0 0h24v24H0z" fill="none"/>
+            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+          </svg>
+        </span>
+      
+      <span class="theme-toggle">
+        <svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M22 41C32.4934 41 41 32.4934 41 22C41 11.5066 32.4934 3 22
+  3C11.5066 3 3 11.5066 3 22C3 32.4934 11.5066 41 22 41ZM7 22C7
+  13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22Z"/>
+</svg>
+
+      </span>
+    </span>
+  </span>
+</header>
+
+
+      <div class="content">
+        
+  
+  
+
+  <div class="post">
+    <h2 class="post-title"><a href="/blog/binary-compatibility-cpp/">DLL的二进制兼容</a></h2>
+    <div class="post-meta">
+      
+        <span class="post-date">
+          2018-06-08
+        </span>
+
+        
+          
+        
+      
+
+      
+      
+    </div>
+
+    
+
+    
+
+    <div class="post-content">
+      <h2 id="详解">详解</h2>
+<h3 id="什么是二进制兼容">什么是二进制兼容？</h3>
+<p>所谓二进制兼容就是在做版本升级（也可能是Bug fix）库文件的时候，不必要重新编译使用这个库的可执行文件或使用这个库的其他库文件，同时能保证程序功能不被破坏。<br>
+当然，这只是一个现象级描述，其实在一些简单的例子里，假设我们导出一个C++类，在调用时，第三方仍然不需要重新编译可以运行。如下面例子：</p>
+<ul>
+<li><strong>FastString.dll</strong> - <em>FastString.h文件</em></li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//导出类
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">__declspec</span>(dllexport) FastString
+{
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+    FastString();
+    <span style="color:#f92672">~</span>FastString();
+    
+    size_t length() { <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>; }
+
+<span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
+    <span style="color:#66d9ef">unsigned</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>m_bytes;
+}
+</code></pre></div><ul>
+<li><strong>test.exe</strong> - <em>main.cpp文件</em></li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>()
+{
+    FastString fStr;
+    size_t len <span style="color:#f92672">=</span> fStr.length();
+    
+    printf(<span style="color:#e6db74">&#34;fast string length %d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, len);
+    _getch();
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div><p>如果我们给导出类加上一个虚函数</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> boole <span style="color:#a6e22e">isEmpty</span>();  <span style="color:#75715e">// 位于 length 方法之前
+</span></code></pre></div><p>重新编译FastString.dll，然后直接运行test.exe，发现仍然能打印出<code>fast string length 0</code>，并且没有运行错误。<br>
+所以按照上面所说，FastString.dll是二进制兼容的。然而不是的！因为它增加了一个虚函数，导致FastString实例增加了一个虚函数表（是一个<code>void **</code>指针），那为什么运行的时候没有错误呢？参考这个问题：<a href="https://stackoverflow.com/questions/49317106/why-new-virtual-function-will-not-break-binary-compatibility-per-phenomenon">SO- why new virtual function will not break binary compatibility per phenomenon?</a></p>
+<p>所以严格来讲，二进制兼容是保证在版本升级的情况下，对象实例的内存布局没有发生变化。</p>
+<h3 id="为什么需要二进制兼容">为什么需要二进制兼容？</h3>
+<p>打个比方，如果库A升级没有做到二进制兼容，那么所有依赖它的程序（或库）都需要要重新编译才能应用A库的新版本，否则会出现各种未知异常，其直接现象就是程序莫名其妙的挂掉。</p>
+<p>譬如像Qt这种使用率很广的程序库，如果每次版本升级都需要第三方使用者重新编译源程序，我想肯定是很多人不愿意的。</p>
+<h3 id="哪些常见做法会破坏二进制兼容">哪些常见做法会破坏二进制兼容？</h3>
+<ol>
+<li>给函数增加参数，现有的可执行文件无法传这个额外的参数。</li>
+<li>增加虚函数，会造成虚函数表vtbl里的排列变化。（不要考虑“只在末尾增加”这种取巧行为，因为你的class可能已被继承）</li>
+<li>增加默认模板类型参数<br>
+例如：<code>template &lt;typename T&gt; class Grid {}</code> 变更为 <code>template &lt;typename t, typenameContainer=vector&gt; class Grid{}</code>。</li>
+<li>改变<code>enum</code>的值。把<code>enum Color { Red = 3};</code>改为<code>Red = 4</code>，这会造成错位。当然，由于<code>enum</code>自动排列取值，添加<code>enum</code>项也是不安全的，除非是在末尾添加。</li>
+</ol>
+<h3 id="哪些做法多半不会破坏二进制兼容">哪些做法多半不会破坏二进制兼容？</h3>
+<ol>
+<li>增加新的class</li>
+<li>增加非虚成员函数</li>
+</ol>
+<blockquote>
+<p>关于更多的 <strong>Do&rsquo;s and Don&rsquo;ts</strong>，可以阅读KDE的两篇wiki：<a href="https://community.kde.org/Policies/Binary_Compatibility_Issues_With_C%2B%2B#The_Do.27s_and_Don.27ts">Policies/Binary Compatibility Issues With C++</a>， <a href="https://community.kde.org/Policies/Binary_Compatibility_Examples">Policies/Binary Compatibility Examples</a></p>
+</blockquote>
+<h2 id="如何实现二进制兼容">如何实现二进制兼容？</h2>
+<h3 id="com理论">COM理论</h3>
+<p>COM (Component object model) 组件对象模型是微软提出的一个伟大想法，它其实是一个规范，并且是二进制规范，也就是说只要遵循这个规范，任何语言、任何平台都可以相互调用相应组件。</p>
+<p>COM涉及到几个概念：</p>
+<ol>
+<li><em>class ID</em>，可以是<em>CLSID - class的GUID</em> 或者 <em>IID - interface的GUID</em>。COM通过这个ID来保证跨语言，因为基本上所有语言都可以处理GUID字符串；另外COM开发者可以通过GUID来获取到准确的对象结构。</li>
+<li><em>coclass - <strong>c</strong>omponent <strong>o</strong>bject <strong>class</strong></em>，简单来说就是COM组件提供给使用者的接口类，这些类其实都是都继承 <code>IUnkown</code>接口的抽象类，里面都是纯虚函数。这个<code>IUnknown</code>包含三个方法：
+<ul>
+<li><code>AddRef</code> - 增加对象引用计数</li>
+<li><code>Release</code> - 减少引用计数，如果计数为0，则销毁</li>
+<li><code>QueryInterface</code> - 根据GUID来查到对象</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>COM组件还涉及到注册表，它可以注册到操作系统的注册表中，这样就算当前这个组件DLL物理位置与运行文件不在同一个目录，也可以加载并获取DLL的导出对象或者函数。更多了解可以看 <a href="https://www.codeproject.com/Articles/633/Introduction-to-COM-What-It-Is-and-How-to-Use-It">CodeProject - Introduction to COM - What It Is and How to Use It</a>。</p>
+</blockquote>
+<p><strong>那为什么可以说COM能保证二进制兼容呢？</strong></p>
+<p>其实通过上面两个概念可以有点思绪，所谓二进制兼容对于C++ 来说就是要保证第三方使用DLL提供的接口对象时，保证内存布局不会改变，或者说不会影响。对于C++来说，对象内存布局的主要包括：</p>
+<ol>
+<li>变量</li>
+<li>虚函数 - 每个实例都会有一个虚函数列表（包括基类的）</li>
+</ol>
+<p>对于COM实现来说，因为是通过GUID来获取对象，并且这些对象都是由接口来提供的实例化（抽象类不能创建实例，这些实例都是继承的子类实现），就像 <strong>caller &mdash;-&gt; coclass (<em>interface</em>) &ndash;<em>create</em>&ndash;&gt; instance</strong> 这样调用。<br>
+由于 instance 是在COM组件类（DLL）实例化以及释放，所以其内存布局对于 caller 来说是没有影响的。</p>
+<h3 id="d指针设计模式">D指针设计模式</h3>
+<p>D指针模式其实和上面COM的方式有点类似，但是它没有COM那么复杂。我们用一个例子来说明为什么D指针模式能做到二进制兼容。</p>
+<p>假设你的class <code>Foo</code> 里定义了一个前置声明类FooPrivate</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">FooPrivate</span>;
+</code></pre></div><p>并且把D指针放在private区</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
+    FooPrivate <span style="color:#f92672">*</span>d;
+</code></pre></div><p><code>FooPrivate</code> 类可以完全在class实现的地方定义（一般是 *.cpp），例如：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">FooPrivate</span> {
+<span style="color:#66d9ef">public</span><span style="color:#f92672">:</span>
+    FooPrivate() <span style="color:#f92672">:</span> m1(<span style="color:#ae81ff">0</span>), m2(<span style="color:#ae81ff">0</span>) {}
+    <span style="color:#66d9ef">int</span> m1;
+    <span style="color:#66d9ef">int</span> m2;
+    QString s;
+}
+</code></pre></div><p>然后你所要做的就是在Foo的构造函数或者 <code>init</code> 方法里创建 private 数据</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">d <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> FooPrivate();
+</code></pre></div><p>并且在析构函数里 delete 掉</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">delete</span> d;
+</code></pre></div><p>当然，在很多时候，我们可能不想让D指针被修改，或者被复制导致我们失去了它的控制权，最后导致内存泄漏。所以很多时候我们会把D指针声明为 <code>const</code>，即</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">private</span><span style="color:#f92672">:</span>
+    FooPrivate<span style="color:#f92672">*</span> <span style="color:#66d9ef">const</span> d;
+</code></pre></div><p>这样就可以允许第三方去修改D指针指向的内容，但是不能修改这个指针的指向目标。</p>
+<p>当这样实现后，我们所有的数据操作都是通过class Foo 的成员方法来做，例如：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">QString Foo<span style="color:#f92672">::</span>string() <span style="color:#66d9ef">const</span>
+{
+    <span style="color:#66d9ef">return</span> d<span style="color:#f92672">-&gt;</span>s;
+}
+
+<span style="color:#66d9ef">void</span> Foo<span style="color:#f92672">::</span>setString( <span style="color:#66d9ef">const</span> QString<span style="color:#f92672">&amp;</span> s )
+{
+    d<span style="color:#f92672">-&gt;</span>s <span style="color:#f92672">=</span> s;
+}
+</code></pre></div><p>从上面可以看到，D指针的实现形式其实也是把数据区域隐藏，只通过方法的调用形式来操作。这样当我们需要修改 Foo 成员变量，对于第三方来说是没有影响的，因为这个成员变量是在 FooPrivate 实例里。</p>
+<h2 id="引用">引用</h2>
+<ol>
+<li><a href="https://community.kde.org/Policies/Binary_Compatibility_Issues_With_C%2B%2B">KDE - Policies/Binary Compatibility Issues With C++</a></li>
+<li><a href="https://stackoverflow.com/questions/37149479/when-do-we-break-binary-compatibility">stackoverflow - When do we break binary compatibility</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Application_binary_interface">Wikipedia - Application binary interface (ABI)</a></li>
+<li><a href="https://stackoverflow.com/questions/2171177/what-is-an-application-binary-interface-abi">stackoverflow - What is an application binary interface</a></li>
+<li><a href="https://www.codeproject.com/Articles/28969/HowTo-Export-C-classes-from-a-DLL">HowTo: Export C++ classes from a DLL</a></li>
+</ol>
+<p><strong>和COM相关：</strong></p>
+<ol>
+<li><a href="https://msdn.microsoft.com/en-us/library/ms690343(v=vs.85).aspx">MSDN - COM Objects and Interfaces</a></li>
+<li><a href="https://stackoverflow.com/questions/2938435/comc-programming-tutorials">SO - COM(C++) programming tutorials?[closed]</a></li>
+<li><a href="http://www.cnblogs.com/zxjay/archive/2010/08/28/1811163.html">博客园 - COM 入门(1)</a></li>
+</ol>
+
+    </div>
+    
+      
+        <div class="pagination">
+          <div class="pagination__title">
+            <span class="pagination__title-h">Read other posts</span>
+            <hr />
+          </div>
+          <div class="pagination__buttons">
+            
+              <span class="button previous">
+                <a href="/blog/2018-review/">
+                  <span class="button__icon">←</span>
+                  <span class="button__text">2018年总结</span>
+                </a>
+              </span>
+            
+            
+          </div>
+        </div>
+      
+    
+
+
+    
+      
+        
+
+      
+    
+
+    </div>
+
+      </div>
+
+      
+        <footer class="footer">
+  <div class="footer__inner">
+    
+      <a href="/" class="logo" style="text-decoration: none;">
+  
+    <span class="logo__mark"><svg xmlns="http://www.w3.org/2000/svg" class="greater-icon" viewBox="0 0 44 44">
+  <path fill="none" d="M15 8l14.729 14.382L15 35.367"/>
+</svg>
+</span>
+    <span class="logo__text">Leo学习小站</span>
+    <span class="logo__cursor"></span>
+  
+</a>
+
+      <div class="copyright">
+        <span>© 2020 Powered by <a href="https://gohugo.io" target="_blank" rel="noopener">Hugo</a></span>
+        <span>Theme created by <a href="https://twitter.com/panr" target="_blank" rel="noopener">panr</a></span>
+      </div>
+    
+  </div>
+</footer>
+
+<script src="/assets/main.js"></script>
+<script src="/assets/prism.js"></script>
+
+
+      
+    </div>
+
+    
+  </body>
+</html>

@@ -2,14 +2,14 @@
 <html lang="zh">
   <head>
     
-      <title>Blogs :: Leo学习日志 — 保持学习的快乐</title>
+      <title>Categories :: Leo学习日志 — 保持学习的快乐</title>
     
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <meta name="description" content=""/>
 <meta name="keywords" content=""/>
 <meta name="robots" content="noodp"/>
-<link rel="canonical" href="/blog/" />
+<link rel="canonical" href="/categories/" />
 
 
 
@@ -26,20 +26,20 @@
 
 
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Blogs"/>
+<meta name="twitter:title" content="Categories"/>
 <meta name="twitter:description" content=""/>
 
 
 
-<meta property="og:title" content="Blogs" />
+<meta property="og:title" content="Categories" />
 <meta property="og:description" content="" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="/blog/" />
-<meta property="og:updated_time" content="2019-02-28T22:22:26+08:00" /><meta property="og:site_name" content="Leo学习日志" />
+<meta property="og:url" content="/categories/" />
+<meta property="og:site_name" content="Leo学习日志" />
 
 
 
-<link rel="alternate" type="application/rss+xml" href="/blog/index.xml" title="Leo学习日志" />
+<link rel="alternate" type="application/rss+xml" href="/categories/index.xml" title="Leo学习日志" />
 
 
 
@@ -112,85 +112,14 @@
 
       <div class="content">
         
-  
-  
 
-  
-  
-  
-
-  <div class="posts">
-    
-    <div class="post on-list">
-      <h1 class="post-title"><a href="/blog/2018-review/">2018年总结</a></h1>
-      <div class="post-meta">
-        
-          <span class="post-date">
-            2019-02-28
-          </span>
-
-          
-        
-        
-        
-      </div>
-
-      
-
-      
-
-      <div class="post-content">
-        
-          
-        
-      </div>
-      
-        <div><a class="read-more button" href="/blog/2018-review/">Read more →</a></div>
-      
-    </div>
-    
-    <div class="post on-list">
-      <h1 class="post-title"><a href="/blog/binary-compatibility-cpp/">DLL的二进制兼容</a></h1>
-      <div class="post-meta">
-        
-          <span class="post-date">
-            2018-06-08
-          </span>
-
-          
-        
-        
-        
-      </div>
-
-      
-
-      
-
-      <div class="post-content">
-        
-          
-            详解 什么是二进制兼容？ 所谓二进制兼容就是在做版本升级（也可能是Bug fix）库文件的时候，不必要重新编译使用这个库的可执行文件或使用这个库的其他库文件，同时能保证程序功能不被破坏。
-当然，这只是一个现象级描述，其实在一些简单的例子里，假设我们导出一个C++类，在调用时，第三方仍然不需要重新编译可以运行。如下面例子：
-FastString.dll - FastString.h文件  //导出类 class __declspec(dllexport) FastString { public: FastString(); ~FastString(); size_t length() { return 0; } private: unsigned char *m_bytes; }  test.exe - main.cpp文件  int main() { FastString fStr; size_t len = fStr.length(); printf(&quot;fast string length %d\n&quot;, len); _getch(); return 0; } 如果我们给导出类加上一个虚函数
-virtual boole isEmpty(); // 位于 length 方法之前 重新编译FastString.dll，然后直接运行test.exe，发现仍然能打印出fast string length 0，并且没有运行错误。
-所以按照上面所说，FastString.dll是二进制兼容的。然而不是的！因为它增加了一个虚函数，导致FastString实例增加了一个虚函数表（是一个void **指针），那为什么运行的时候没有错误呢？参考这个问题：SO- why new virtual function will not break binary compatibility per phenomenon?
-          
-        
-      </div>
-      
-        <div><a class="read-more button" href="/blog/binary-compatibility-cpp/">Read more →</a></div>
-      
-    </div>
-    
-    <div class="pagination">
-  <div class="pagination__buttons">
+<div class="terms">
+  <h1>Categories</h1>
+  <ul class="terms__list">
     
     
-  </div>
+  </ul>
 </div>
-
-  </div>
 
       </div>
 
